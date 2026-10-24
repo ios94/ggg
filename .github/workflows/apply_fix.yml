@@ -1,6 +1,11 @@
-name: Apply Fix Zip
+name: Apply Fix From Release
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag that contains ooooo-main_FIXED.zip"
+        required: true
+        default: "fix"
 permissions:
   contents: write
 jobs:
@@ -9,13 +14,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Apply fixed files from zip
+      - name: Download zip from the release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          test -f AshteMobile_fix_files.zip
+          gh release download "${{ inputs.tag }}" --repo "${{ github.repository }}" --pattern "ooooo-main_FIXED.zip" --dir . --clobber
+          test -f ooooo-main_FIXED.zip
+
+      - name: Apply only the AshteMobile folder
+        run: |
           mkdir tmp_unzip
-          unzip -q AshteMobile_fix_files.zip -d tmp_unzip
-          rsync -a tmp_unzip/AshteMobile/ AshteMobile/
-          rm -rf tmp_unzip AshteMobile_fix_files.zip
+          unzip -q ooooo-main_FIXED.zip -d tmp_unzip
+          rsync -a tmp_unzip/ooooo-main/AshteMobile/ AshteMobile/
+          rm -rf tmp_unzip ooooo-main_FIXED.zip
           test -f AshteMobile/Views/Common/AshteInstallQueue.swift
 
       - name: Commit and push
