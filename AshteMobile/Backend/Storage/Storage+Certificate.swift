@@ -20,20 +20,34 @@ extension Storage {
 		isDefault: Bool = false,
 		completion: @escaping (Error?) -> Void
 	) {
-		let generator = UIImpactFeedbackGenerator(style: .light)
+		// The view context belongs to the main thread. Creating the object from a background
+		// thread made the certificate randomly fail to appear (it worked on the 2nd/3rd try).
+		let work = {
+			let generator = UIImpactFeedbackGenerator(style: .light)
+			
+			let new = CertificatePair(context: self.context)
+			new.uuid = uuid
+			new.date = Date()
+			new.password = password
+			new.ppQCheck = ppq
+			new.expiration = expiration
+			new.nickname = nickname
+			new.isDefault = isDefault
+			Storage.shared.revokagedCertificate(for: new)
+			
+			if self.context.hasChanges {
+				try? self.context.save()
+			}
+			
+			generator.impactOccurred()
+			completion(nil)
+		}
 		
-		let new = CertificatePair(context: context)
-		new.uuid = uuid
-		new.date = Date()
-		new.password = password
-		new.ppQCheck = ppq
-		new.expiration = expiration
-		new.nickname = nickname
-		new.isDefault = isDefault
-		Storage.shared.revokagedCertificate(for: new)
-		saveContext()
-		generator.impactOccurred()
-		completion(nil)
+		if Thread.isMainThread {
+			work()
+		} else {
+			DispatchQueue.main.sync(execute: work)
+		}
 	}
 	
 	func deleteCertificate(for cert: CertificatePair) {

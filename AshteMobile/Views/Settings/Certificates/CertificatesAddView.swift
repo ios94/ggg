@@ -13,9 +13,10 @@ struct CertificatesAddView: View {
     
     @State private var _isImportingP12Presenting = false
     @State private var _isImportingMobileProvisionPresenting = false
+    @State private var _isSaving = false
     
     var saveButtonDisabled: Bool {
-        _p12URL == nil || _provisionURL == nil
+        _p12URL == nil || _provisionURL == nil || _isSaving
     }
     
     // MARK: Body
@@ -117,6 +118,7 @@ struct CertificatesAddView: View {
                 FileImporterRepresentableView(
                     allowedContentTypes: [.p12],
                     onDocumentsPicked: { urls in
+                        self._isImportingP12Presenting = false
                         guard let selectedFileURL = urls.first else { return }
                         self._p12URL = selectedFileURL
                     }
@@ -127,6 +129,7 @@ struct CertificatesAddView: View {
                 FileImporterRepresentableView(
                     allowedContentTypes: [.mobileProvision],
                     onDocumentsPicked: { urls in
+                        self._isImportingMobileProvisionPresenting = false
                         guard let selectedFileURL = urls.first else { return }
                         self._provisionURL = selectedFileURL
                     }
@@ -193,11 +196,25 @@ extension CertificatesAddView {
 // MARK: - Extension: Logic
 extension CertificatesAddView {
     private func _saveCertificate() {
+        guard !_isSaving else { return }
+        
         guard
             let p12URL = _p12URL,
-            let provisionURL = _provisionURL,
-            FR.checkPasswordForCertificate(for: p12URL, with: _p12Password, using: provisionURL)
-        else {
+            let provisionURL = _provisionURL
+        else { return }
+        
+        // The OpenSSL password check is stateful and could fail on the first calls even with
+        // the right password (it worked only after several taps). Try a few times before
+        // reporting "Bad Password".
+        var passwordOK = false
+        for _ in 0..<4 {
+            if FR.checkPasswordForCertificate(for: p12URL, with: _p12Password, using: provisionURL) {
+                passwordOK = true
+                break
+            }
+        }
+        
+        guard passwordOK else {
             UIAlertController.showAlertWithOk(
                 title: .localized("Bad Password"),
                 message: .localized("Please check the password and try again.")
@@ -205,13 +222,24 @@ extension CertificatesAddView {
             return
         }
         
+        _isSaving = true
+        
         FR.handleCertificateFiles(
             p12URL: p12URL,
             provisionURL: provisionURL,
             p12Password: _p12Password,
             certificateName: _certificateName
-        ) { _ in
-            dismiss()
+        ) { error in
+            _isSaving = false
+            
+            if let error {
+                UIAlertController.showAlertWithOk(
+                    title: .localized("Error"),
+                    message: error.localizedDescription
+                )
+            } else {
+                dismiss()
+            }
         }
     }
 }

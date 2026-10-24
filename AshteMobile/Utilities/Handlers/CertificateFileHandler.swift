@@ -46,6 +46,13 @@ final class CertificateFileHandler: NSObject {
 		}
 		
 		let destinationURL = try await _directory()
+		
+		let keyAccess = _key.startAccessingSecurityScopedResource()
+		let provisionAccess = _provision.startAccessingSecurityScopedResource()
+		defer {
+			if keyAccess { _key.stopAccessingSecurityScopedResource() }
+			if provisionAccess { _provision.stopAccessingSecurityScopedResource() }
+		}
 
 		try _fileManager.createDirectory(at: destinationURL, withIntermediateDirectories: true)
 		try _fileManager.copyItem(at: _key, to: destinationURL.appendingPathComponent(_key.lastPathComponent))
@@ -54,15 +61,24 @@ final class CertificateFileHandler: NSObject {
 	
 	func addToDatabase() async throws {
 		
-		Storage.shared.addCertificate(
-			uuid: _uuid,
-			password: _keyPassword,
-			nickname: _certNickname,
-			ppq: _certPair?.PPQCheck ?? false,
-			expiration: _certPair?.ExpirationDate ?? Date(),
-			isDefault: _isDefault
-		) { _ in
-			Logger.misc.info("[\(self._uuid)] Added to database")
+		let uuid = _uuid
+		let password = _keyPassword
+		let nickname = _certNickname
+		let ppq = _certPair?.PPQCheck ?? false
+		let expiration = _certPair?.ExpirationDate ?? Date()
+		let isDefault = _isDefault
+		
+		await MainActor.run {
+			Storage.shared.addCertificate(
+				uuid: uuid,
+				password: password,
+				nickname: nickname,
+				ppq: ppq,
+				expiration: expiration,
+				isDefault: isDefault
+			) { _ in
+				Logger.misc.info("[\(uuid)] Added to database")
+			}
 		}
 	}
 	
@@ -72,6 +88,10 @@ final class CertificateFileHandler: NSObject {
 	}
 }
 
-private enum CertificateFileHandlerError: Error {
+private enum CertificateFileHandlerError: LocalizedError {
 	case certNotValid
+	
+	var errorDescription: String? {
+		"The provisioning profile is not valid or could not be read. Please select it again."
+	}
 }
