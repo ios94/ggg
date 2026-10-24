@@ -31,15 +31,10 @@ struct AppsView: View {
     var body: some View {
         NBNavigationView(.localized("Apps")) {
             VStack(spacing: 0) {
-                Picker("Categories", selection: $_selectedCategory) {
-                    Text("All").tag("All")
-                    Text("Games").tag("Games")
-                    Text("Apps").tag("Apps")
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-                .padding(.top, 4)
+                AshteSegmentedControl(options: ["All", "Games", "Apps"], selection: $_selectedCategory)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 10)
+                    .padding(.top, 4)
                 
                 if let firstSource = _sources.first, let repo = viewModel.sources[firstSource] {
                     SourceAppsTableRepresentableView(

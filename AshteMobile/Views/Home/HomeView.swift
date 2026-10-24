@@ -157,7 +157,7 @@ struct HomeView: View {
                     VStack(spacing: 16) {
                         ProgressView()
                             .scaleEffect(1.3)
-                            .tint(AshteTheme.pink)
+                            .tint(AshteTheme.violet)
                         Text(.localized("Loading..."))
                             .font(.system(.headline, design: .rounded))
                             .foregroundColor(.secondary)
@@ -190,9 +190,9 @@ struct HomeView: View {
                                             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                                    .strokeBorder(AshteTheme.primary, lineWidth: 2.5)
+                                                    .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
                                             )
-                                            .shadow(color: AshteTheme.violet.opacity(0.35), radius: 14, x: 0, y: 8)
+                                            .shadow(color: AshteTheme.violet.opacity(0.28), radius: 20, x: 0, y: 12)
                                             .padding(.horizontal, 20)
                                         }
                                         .buttonStyle(.plain)
@@ -209,39 +209,17 @@ struct HomeView: View {
                                 .padding(.top, 10)
                             }
                             
-                            HStack(spacing: 10) {
-                                ForEach(HomeCategoryTab.allCases) { tab in
-                                    Button {
-                                        let generator = UIImpactFeedbackGenerator(style: .light)
-                                        generator.impactOccurred()
-                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            AshteSegmentedControl(
+                                options: HomeCategoryTab.allCases.map { $0.title },
+                                selection: Binding(
+                                    get: { selectedTab.title },
+                                    set: { newTitle in
+                                        if let tab = HomeCategoryTab.allCases.first(where: { $0.title == newTitle }) {
                                             selectedTab = tab
                                         }
-                                    } label: {
-                                        Label(tab.title, systemImage: tab.icon)
-                                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                                            .foregroundColor(selectedTab == tab ? .white : .primary)
-                                            .padding(.horizontal, 20)
-                                            .padding(.vertical, 8)
-                                            .background(
-                                                ZStack {
-                                                    if selectedTab == tab {
-                                                        Capsule()
-                                                            .fill(tab.gradient)
-                                                            .matchedGeometryEffect(id: "activeTabBadge", in: tabAnimation)
-                                                    } else {
-                                                        Capsule()
-                                                            .fill(Color(UIColor.secondarySystemGroupedBackground))
-                                                    }
-                                                }
-                                            )
-                                            .shadow(color: selectedTab == tab ? tab.color.opacity(0.4) : .black.opacity(0.03), radius: 6, x: 0, y: 3)
-                                            .scaleEffect(selectedTab == tab ? 1.05 : 1)
                                     }
-                                    .buttonStyle(.plain)
-                                }
-                                Spacer()
-                            }
+                                )
+                            )
                             .padding(.horizontal, 20)
                             
                             if !filteredApps.isEmpty {
@@ -253,23 +231,16 @@ struct HomeView: View {
                                     )
                                     .padding(.horizontal, 22)
                                     
-                                    VStack(spacing: 0) {
+                                    LazyVStack(spacing: 12) {
                                         ForEach(filteredApps) { app in
                                             NavigationLink(destination: AshteHomeAppDetailView(app: app, onDownloadComplete: { handleAutoSign(for: app) })) {
                                                 AshteHomeAppCell(app: app, onDownloadComplete: { handleAutoSign(for: app) })
-                                                    .padding(.horizontal, 20)
-                                                    .padding(.vertical, 14)
-                                                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                                                    .padding(14)
+                                                    .ashteCard(cornerRadius: 22, tint: app.type == "games" ? AshteTheme.pink : AshteTheme.violet)
                                             }
                                             .buttonStyle(.plain)
-                                            
-                                            if app.idNumber != filteredApps.last?.idNumber {
-                                                Divider()
-                                                    .padding(.leading, 95)
-                                            }
                                         }
                                     }
-                                    .ashteCard(cornerRadius: 24, tint: selectedTab.color)
                                     .padding(.horizontal, 16)
                                 }
                             } else if !searchText.isEmpty || !isLoading {
@@ -367,16 +338,22 @@ struct AshteHomeAppCell: View {
             )
             .shadow(color: AshteTheme.violet.opacity(0.18), radius: 6, x: 0, y: 3)
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(app.name)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
                     .lineLimit(1)
                 
-                Text("\(app.type == "games" ? "Game" : "App") • v\(app.version ?? "1.0")")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    AshtePill(
+                        text: app.type == "games" ? "Game" : "App",
+                        tint: app.type == "games" ? AshteTheme.pink : AshteTheme.blue
+                    )
+                    Text("v\(app.version ?? "1.0")")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
             }
             
             Spacer(minLength: 10)
@@ -544,7 +521,7 @@ struct AshteHomeAppDetailView: View {
                             VStack(spacing: 8) {
                                 HStack {
                                     ProgressView()
-                                        .tint(AshteTheme.pink)
+                                        .tint(AshteTheme.violet)
                                         .padding(.trailing, 4)
                                     Text(.localized("Downloading..."))
                                         .font(.system(size: 16, weight: .bold, design: .rounded))
