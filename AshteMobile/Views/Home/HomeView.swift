@@ -495,14 +495,13 @@ struct AshteHomeAppDetailView: View {
                                 .background(.ultraThinMaterial, in: Circle())
                         }
                         Spacer()
-                        if let shareURL = URL(string: app.download_url) {
-                            ShareLink(item: shareURL) {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 40, height: 40)
-                                    .background(.ultraThinMaterial, in: Circle())
-                            }
+                        // Share only the app name + the website, never the real download link
+                        ShareLink(item: "\(app.name)\nhttps://ashtemobile.site") {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 40, height: 40)
+                                .background(.ultraThinMaterial, in: Circle())
                         }
                     }
                     .padding(.horizontal, 20)

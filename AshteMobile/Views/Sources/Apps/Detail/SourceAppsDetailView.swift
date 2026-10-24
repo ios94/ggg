@@ -180,12 +180,8 @@ struct SourceAppsDetailView: View {
 				systemImage: "square.and.arrow.up",
 				placement: .topBarTrailing
 			) {
-				let sharedString = """
-				\(app.currentName) - \(app.currentVersion ?? "0")
-				\(app.currentDescription ?? .localized("An awesome application"))
-				---
-				\(source.website?.absoluteString ?? source.name ?? "")
-				"""
+				// Share only the app name + the website, never the real download link
+				let sharedString = "\(app.currentName)\nhttps://ashtemobile.site"
 				UIActivityViewController.show(activityItems: [sharedString])
 			}
 		}
