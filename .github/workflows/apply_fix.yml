@@ -5,7 +5,7 @@ on:
       tag:
         description: "Release tag that contains ooooo-main_FIXED.zip"
         required: true
-        default: "fix"
+        default: "V1"
 permissions:
   contents: write
 jobs:
@@ -21,18 +21,21 @@ jobs:
           gh release download "${{ inputs.tag }}" --repo "${{ github.repository }}" --pattern "ooooo-main_FIXED.zip" --dir . --clobber
           test -f ooooo-main_FIXED.zip
 
-      - name: Apply only the AshteMobile folder
+      - name: Copy the whole project into the repo (workflow files are skipped)
         run: |
           mkdir tmp_unzip
           unzip -q ooooo-main_FIXED.zip -d tmp_unzip
-          rsync -a tmp_unzip/ooooo-main/AshteMobile/ AshteMobile/
+          rsync -a --exclude '.github' --exclude '.git' tmp_unzip/ooooo-main/ ./
           rm -rf tmp_unzip ooooo-main_FIXED.zip
+          test -f AshteMobile.xcodeproj/project.pbxproj
           test -f AshteMobile/Views/Common/AshteInstallQueue.swift
+          test -n "$(ls -A Zsign)"
+          test -n "$(ls -A IDeviceKitten)"
 
       - name: Commit and push
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git add -A
-          git commit -m "Fix: install several apps at once" || echo "nothing to commit"
+          git commit -m "Add AshteMobile project with multi-install fix" || echo "nothing to commit"
           git push
