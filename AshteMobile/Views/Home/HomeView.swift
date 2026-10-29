@@ -149,7 +149,7 @@ struct HomeView: View {
     ]
     
     var body: some View {
-        NBNavigationView(.localized("Discover")) {
+        NBNavigationView(.localized("Home")) {
             ZStack {
                 AshteBackground()
                 
@@ -187,13 +187,8 @@ struct HomeView: View {
                                                 }
                                             }
                                             .frame(height: 200)
-                                            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                                    .strokeBorder(AshteTheme.primary, lineWidth: 2.5)
-                                            )
-                                            .shadow(color: AshteTheme.violet.opacity(0.35), radius: 14, x: 0, y: 8)
-                                            .padding(.horizontal, 20)
+                                            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                                            .padding(.horizontal, 12)
                                         }
                                         .buttonStyle(.plain)
                                         .tag(index)
@@ -209,68 +204,42 @@ struct HomeView: View {
                                 .padding(.top, 10)
                             }
                             
-                            HStack(spacing: 10) {
-                                ForEach(HomeCategoryTab.allCases) { tab in
-                                    Button {
-                                        let generator = UIImpactFeedbackGenerator(style: .light)
-                                        generator.impactOccurred()
-                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            AshteChipBar(
+                                options: HomeCategoryTab.allCases.map { $0.title },
+                                selection: Binding(
+                                    get: { selectedTab.title },
+                                    set: { newTitle in
+                                        if let tab = HomeCategoryTab.allCases.first(where: { $0.title == newTitle }) {
                                             selectedTab = tab
                                         }
-                                    } label: {
-                                        Label(tab.title, systemImage: tab.icon)
-                                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                                            .foregroundColor(selectedTab == tab ? .white : .primary)
-                                            .padding(.horizontal, 20)
-                                            .padding(.vertical, 8)
-                                            .background(
-                                                ZStack {
-                                                    if selectedTab == tab {
-                                                        Capsule()
-                                                            .fill(tab.gradient)
-                                                            .matchedGeometryEffect(id: "activeTabBadge", in: tabAnimation)
-                                                    } else {
-                                                        Capsule()
-                                                            .fill(Color(UIColor.secondarySystemGroupedBackground))
-                                                    }
-                                                }
-                                            )
-                                            .shadow(color: selectedTab == tab ? tab.color.opacity(0.4) : .black.opacity(0.03), radius: 6, x: 0, y: 3)
-                                            .scaleEffect(selectedTab == tab ? 1.05 : 1)
                                     }
-                                    .buttonStyle(.plain)
-                                }
-                                Spacer()
-                            }
-                            .padding(.horizontal, 20)
+                                )
+                            )
                             
                             if !filteredApps.isEmpty {
-                                VStack(spacing: 14) {
+                                VStack(spacing: 6) {
                                     AshteSectionTitle(
-                                        title: selectedTab.title,
+                                        title: selectedTab == .all ? .localized("Recently Updated") : selectedTab.title,
                                         count: filteredApps.count,
                                         gradient: selectedTab.gradient
                                     )
-                                    .padding(.horizontal, 22)
+                                    .padding(.horizontal, 20)
                                     
                                     VStack(spacing: 0) {
                                         ForEach(filteredApps) { app in
                                             NavigationLink(destination: AshteHomeAppDetailView(app: app, onDownloadComplete: { handleAutoSign(for: app) })) {
                                                 AshteHomeAppCell(app: app, onDownloadComplete: { handleAutoSign(for: app) })
                                                     .padding(.horizontal, 20)
-                                                    .padding(.vertical, 14)
-                                                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                                                    .padding(.vertical, 12)
                                             }
                                             .buttonStyle(.plain)
                                             
                                             if app.idNumber != filteredApps.last?.idNumber {
                                                 Divider()
-                                                    .padding(.leading, 95)
+                                                    .padding(.leading, 89)
                                             }
                                         }
                                     }
-                                    .ashteCard(cornerRadius: 24, tint: selectedTab.color)
-                                    .padding(.horizontal, 16)
                                 }
                             } else if !searchText.isEmpty || !isLoading {
                                 AshteHomeEmptyView()
@@ -284,6 +253,7 @@ struct HomeView: View {
             .refreshable {
                 await loadRemoteApps()
             }
+            .ashteTopActions()
         }
         .task {
             await loadRemoteApps()
@@ -351,6 +321,15 @@ struct AshteHomeAppCell: View {
     @State private var downloadProgress: Double = 0
     @State private var cancellable: AnyCancellable?
     @State private var hasTriggeredDownloadAction = false
+    
+    private var _subtitle: String {
+        let version = app.version ?? "1.0"
+        let firstLine = (app.descriptionText ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .components(separatedBy: .newlines)
+            .first ?? ""
+        return firstLine.isEmpty ? version : "\(version) • \(firstLine)"
+    }
 
     var body: some View {
         HStack(spacing: 16) {
@@ -359,22 +338,26 @@ struct AshteHomeAppCell: View {
             } placeholder: {
                 Color(UIColor.tertiarySystemGroupedBackground)
             }
-            .frame(width: 65, height: 65)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .frame(width: 53, height: 53)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
             )
-            .shadow(color: AshteTheme.violet.opacity(0.18), radius: 6, x: 0, y: 3)
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(app.name)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.primary)
                     .lineLimit(1)
                 
-                Text("\(app.type == "games" ? "Game" : "App") • v\(app.version ?? "1.0")")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                Text(_subtitle)
+                    .font(.system(size: 15))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                
+                Text(app.category ?? app.type ?? "apps")
+                    .font(.system(size: 14))
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
@@ -465,153 +448,153 @@ struct AshteHomeAppDetailView: View {
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 0) {
-                ZStack(alignment: .top) {
-                    GeometryReader { proxy in
-                        let minY = proxy.frame(in: .global).minY
-                        AsyncImage(url: app.fullImageURL) { image in
-                            image.resizable().aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            Color.gray
-                        }
-                        .frame(width: proxy.size.width, height: proxy.size.height + (minY > 0 ? minY : 0))
-                        .clipped()
-                        .offset(y: minY > 0 ? -minY : 0)
-                        .blur(radius: 30, opaque: true)
-                        .overlay(Color.black.opacity(0.2))
-                        .overlay(
-                            AshteTheme.primary.opacity(0.55)
-                                .blendMode(.softLight)
-                        )
+            VStack(alignment: .leading, spacing: 0) {
+                // Blurred header made from the app icon
+                GeometryReader { proxy in
+                    let minY = proxy.frame(in: .global).minY
+                    AsyncImage(url: app.fullImageURL) { image in
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Color(UIColor.systemGray4)
                     }
-                    .frame(height: 250)
-                    
-                    HStack {
-                        Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 40, height: 40)
-                                .background(.ultraThinMaterial, in: Circle())
-                        }
-                        Spacer()
-                        // Share only the app name + the website, never the real download link
-                        ShareLink(item: "\(app.name)\nhttps://ashtemobile.site") {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 40, height: 40)
-                                .background(.ultraThinMaterial, in: Circle())
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, _topSafeAreaInset)
+                    .frame(width: proxy.size.width, height: proxy.size.height + (minY > 0 ? minY : 0))
+                    .clipped()
+                    .offset(y: minY > 0 ? -minY : 0)
+                    .blur(radius: 40, opaque: true)
+                    .overlay(Color.black.opacity(0.15))
                 }
+                .frame(height: 230)
                 
-                VStack(spacing: 16) {
+                // Icon + name + category + Get
+                HStack(alignment: .top, spacing: 16) {
                     AsyncImage(url: app.fullImageURL) { image in
                         image.resizable().aspectRatio(contentMode: .fill)
                     } placeholder: {
                         Color(UIColor.secondarySystemBackground)
                     }
-                    .frame(width: 110, height: 110)
-                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                    .frame(width: 106, height: 106)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 26, style: .continuous)
-                            .strokeBorder(AshteTheme.candy, lineWidth: 3)
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
                     )
-                    .shadow(color: AshteTheme.pink.opacity(0.35), radius: 16, x: 0, y: 8)
-                    .padding(.top, -55)
                     
-                    VStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(app.name)
-                            .font(.system(size: 26, weight: .heavy, design: .rounded))
+                            .font(.system(size: 26, weight: .bold))
                             .foregroundColor(.primary)
-                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                         
-                        Text(app.developerName ?? "AshteMobile")
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                            .foregroundColor(AshteTheme.violet)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 5)
-                            .background(AshteTheme.violet.opacity(0.12))
-                            .clipShape(Capsule())
-                    }
-                    
-                    HStack(spacing: 16) {
+                        Text(app.category ?? app.type ?? "apps")
+                            .font(.system(size: 17))
+                            .foregroundColor(.secondary)
+                        
                         if downloadManager.getDownload(by: app.stringID) != nil {
-                            VStack(spacing: 8) {
-                                HStack {
-                                    ProgressView()
-                                        .tint(AshteTheme.pink)
-                                        .padding(.trailing, 4)
-                                    Text(.localized("Downloading..."))
-                                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                                    Spacer()
-                                    Text("\(Int(downloadProgress * 100))%")
-                                        .font(.system(size: 16, weight: .heavy, design: .rounded))
-                                }
-                                .foregroundColor(AshteTheme.violet)
-                                
-                                GeometryReader { geo in
-                                    ZStack(alignment: .leading) {
-                                        Capsule().fill(AshteTheme.violet.opacity(0.15))
-                                        Capsule()
-                                            .fill(AshteTheme.primary)
-                                            .frame(width: geo.size.width * CGFloat(min(max(downloadProgress, 0), 1)))
-                                            .animation(.smooth, value: downloadProgress)
-                                    }
-                                }
-                                .frame(height: 8)
+                            HStack(spacing: 10) {
+                                ProgressView(value: min(max(downloadProgress, 0), 1))
+                                    .tint(Color.accentColor)
+                                Text("\(Int(downloadProgress * 100))%")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.accentColor)
+                                    .monospacedDigit()
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 14)
-                            .frame(maxWidth: .infinity, minHeight: 50)
-                            .background(AshteTheme.violet.opacity(0.08))
-                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                            .padding(.top, 6)
                         } else {
                             Button(action: { triggerDownload() }) {
                                 Text(.localized("Get"))
-                                    .frame(maxWidth: .infinity, minHeight: 50)
                             }
-                            .buttonStyle(AshteGradientButtonStyle(
-                                gradient: app.type == "games" ? AshteTheme.sunset : AshteTheme.primary,
-                                shadowColor: app.type == "games" ? AshteTheme.pink : AshteTheme.violet,
-                                horizontalPadding: 0, verticalPadding: 0
-                            ))
+                            .buttonStyle(AshteGradientButtonStyle())
+                            .padding(.top, 4)
                         }
                     }
-                    .padding(.horizontal, 30)
-                    .padding(.top, 10)
                     
-                    HStack(spacing: 15) {
-                        AshteInfoCard(title: "Version", value: app.version ?? "1.0", icon: "v.circle.fill", gradient: AshteTheme.primary)
-                        AshteInfoCard(title: "Size", value: app.size ?? "N/A", icon: "shippingbox.fill", gradient: AshteTheme.ocean)
-                        AshteInfoCard(title: "Category", value: app.type == "games" ? "Game" : "App", icon: "square.grid.2x2.fill", gradient: AshteTheme.sunset)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 15)
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        AshteSectionTitle(title: "About this app")
-                        
-                        Text(app.descriptionText ?? "No description available for \(app.name). Discover the amazing features inside.")
-                            .font(.system(size: 16))
-                            .foregroundColor(.secondary)
-                            .lineSpacing(6)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(24)
-                    .ashteCard(cornerRadius: 26)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 10)
+                    Spacer(minLength: 0)
                 }
-                .padding(.bottom, 50)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 16)
+                
+                Divider().padding(.horizontal, 16)
+                
+                // Version + size
+                HStack(spacing: 12) {
+                    AshteDetailChip(
+                        icon: "tag",
+                        text: app.version ?? "1.0",
+                        tint: Color.accentColor,
+                        filled: true
+                    )
+                    AshteDetailChip(
+                        icon: "archivebox",
+                        text: app.size ?? "N/A",
+                        tint: .primary,
+                        filled: false
+                    )
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                
+                Divider().padding(.horizontal, 16)
+                
+                // Description
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(.localized("Description"))
+                        .font(.system(size: 26, weight: .bold))
+                    
+                    Text(app.descriptionText ?? "No description available for \(app.name).")
+                        .font(.system(size: 17))
+                        .foregroundColor(.primary)
+                        .lineSpacing(4)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 18)
+                
+                Divider().padding(.horizontal, 16)
+                
+                // Information
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(.localized("Information"))
+                        .font(.system(size: 26, weight: .bold))
+                        .padding(.bottom, 10)
+                    
+                    AshteInfoRow(title: .localized("Developer"), value: app.developerName ?? "AshteMobile")
+                    AshteInfoRow(title: .localized("Identifier"), value: app.bundleIdentifier ?? "-")
+                    AshteInfoRow(title: .localized("Category"), value: app.category ?? app.type ?? "-")
+                    AshteInfoRow(title: .localized("Size"), value: app.size ?? "-", showsDivider: false)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 18)
+                .padding(.bottom, 80)
             }
         }
         .edgesIgnoringSafeArea(.top)
         .background(AshteBackground())
         .navigationBarHidden(true)
+        .overlay(alignment: .top) {
+            HStack(spacing: 12) {
+                Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+                
+                Spacer()
+                
+                // Share only the app name + the website, never the real download link
+                ShareLink(item: "\(app.name)\nhttps://ashtemobile.site") {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, _topSafeAreaInset)
+        }
         .onAppear(perform: setupObserver)
         .onDisappear { cancellable?.cancel() }
         .onChange(of: downloadManager.downloads.count) { _ in
@@ -682,5 +665,53 @@ struct AshteInfoCard: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
         .ashteCard(cornerRadius: 20)
+    }
+}
+
+// MARK: - Detail helpers
+struct AshteDetailChip: View {
+    let icon: String
+    let text: String
+    var tint: Color
+    var filled: Bool
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+            Text(text)
+                .font(.system(size: 17, weight: .medium))
+                .lineLimit(1)
+        }
+        .foregroundColor(tint)
+        .frame(maxWidth: .infinity, minHeight: 48)
+        .background(filled ? tint.opacity(0.15) : Color(UIColor.systemGray5))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
+struct AshteInfoRow: View {
+    let title: String
+    let value: String
+    var showsDivider: Bool = true
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .firstTextBaseline, spacing: 16) {
+                Text(title)
+                    .font(.system(size: 17))
+                    .foregroundColor(.primary)
+                Spacer(minLength: 12)
+                Text(value)
+                    .font(.system(size: 17))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.trailing)
+            }
+            .padding(.vertical, 14)
+            
+            if showsDivider {
+                Divider()
+            }
+        }
     }
 }

@@ -104,6 +104,7 @@ struct SourcesView: View {
                     _emptyStateView()
                 }
             }
+            .ashteTopActions(placement: .topBarLeading)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

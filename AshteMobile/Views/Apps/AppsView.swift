@@ -31,15 +31,7 @@ struct AppsView: View {
     var body: some View {
         NBNavigationView(.localized("Apps")) {
             VStack(spacing: 0) {
-                Picker("Categories", selection: $_selectedCategory) {
-                    Text("All").tag("All")
-                    Text("Games").tag("Games")
-                    Text("Apps").tag("Apps")
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-                .padding(.top, 4)
+                AshteChipBar(options: ["All", "Games", "Apps"], selection: $_selectedCategory)
                 
                 if let firstSource = _sources.first, let repo = viewModel.sources[firstSource] {
                     SourceAppsTableRepresentableView(
@@ -73,6 +65,7 @@ struct AppsView: View {
             .refreshable {
                 await viewModel.fetchSources(_sources, refresh: true)
             }
+            .ashteTopActions()
             .navigationDestinationIfAvailable(item: $_selectedRoute) { route in
                 SourceAppsDetailView(source: route.source, app: route.app)
             }

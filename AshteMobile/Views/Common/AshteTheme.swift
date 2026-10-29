@@ -2,44 +2,33 @@
 //  AshteTheme.swift
 //  AshteMobile
 //
-//  Colorful & youthful design system shared by every screen.
-//  (File-system synchronized group: no Xcode project edit needed.)
+//  "Stock" look: white / system backgrounds, flat rows, system blue accent,
+//  light-gray "Get" capsules. Same API names as before, so every screen adopts it.
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - Palette
 enum AshteTheme {
-	static let violet = Color(ashteHex: 0x7C5CFF)
-	static let pink   = Color(ashteHex: 0xFF4F9A)
-	static let orange = Color(ashteHex: 0xFF9F1C)
-	static let cyan   = Color(ashteHex: 0x19C9F3)
-	static let mint   = Color(ashteHex: 0x2ED8A3)
-	static let sun    = Color(ashteHex: 0xFFD23F)
+	static let violet = Color.accentColor
+	static let pink   = Color(UIColor.systemPink)
+	static let orange = Color(UIColor.systemOrange)
+	static let cyan   = Color(UIColor.systemCyan)
+	static let mint   = Color(UIColor.systemMint)
+	static let sun    = Color(UIColor.systemYellow)
+	static let blue   = Color(UIColor.systemBlue)
 	
-	/// Main brand gradient (violet → pink)
-	static let primary = LinearGradient(
-		colors: [violet, pink],
-		startPoint: .topLeading, endPoint: .bottomTrailing
-	)
-	static let sunset = LinearGradient(
-		colors: [pink, orange],
-		startPoint: .topLeading, endPoint: .bottomTrailing
-	)
-	static let ocean = LinearGradient(
-		colors: [cyan, violet],
-		startPoint: .topLeading, endPoint: .bottomTrailing
-	)
-	static let fresh = LinearGradient(
-		colors: [mint, cyan],
-		startPoint: .topLeading, endPoint: .bottomTrailing
-	)
-	static let candy = LinearGradient(
-		colors: [violet, pink, orange],
-		startPoint: .topLeading, endPoint: .bottomTrailing
-	)
+	private static func flat(_ color: Color) -> LinearGradient {
+		LinearGradient(colors: [color, color.opacity(0.88)], startPoint: .top, endPoint: .bottom)
+	}
 	
-	/// Gradients used in rotation for rows/badges so lists feel lively.
+	static let primary = flat(Color.accentColor)
+	static let sunset  = flat(Color(UIColor.systemOrange))
+	static let ocean   = flat(Color(UIColor.systemCyan))
+	static let fresh   = flat(Color(UIColor.systemMint))
+	static let candy   = flat(Color(UIColor.systemPink))
+	
 	static let rotation: [LinearGradient] = [primary, ocean, sunset, fresh]
 	
 	static func gradient(at index: Int) -> LinearGradient {
@@ -49,7 +38,6 @@ enum AshteTheme {
 
 // MARK: - Color helper
 extension Color {
-	/// 0xRRGGBB initializer (named differently to avoid clashing with `init(hex: String)`).
 	init(ashteHex value: UInt32, opacity: Double = 1) {
 		self.init(
 			.sRGB,
@@ -61,36 +49,16 @@ extension Color {
 	}
 }
 
-// MARK: - Background (soft colorful blobs)
+// MARK: - Background
 struct AshteBackground: View {
 	var body: some View {
-		ZStack {
-			Color(UIColor.systemGroupedBackground)
-			
-			Circle()
-				.fill(AshteTheme.violet.opacity(0.22))
-				.frame(width: 320, height: 320)
-				.blur(radius: 90)
-				.offset(x: -140, y: -300)
-			
-			Circle()
-				.fill(AshteTheme.pink.opacity(0.18))
-				.frame(width: 300, height: 300)
-				.blur(radius: 90)
-				.offset(x: 160, y: -120)
-			
-			Circle()
-				.fill(AshteTheme.cyan.opacity(0.16))
-				.frame(width: 320, height: 320)
-				.blur(radius: 100)
-				.offset(x: -120, y: 360)
-		}
-		.ignoresSafeArea()
-		.allowsHitTesting(false)
+		Color(UIColor.systemBackground)
+			.ignoresSafeArea()
+			.allowsHitTesting(false)
 	}
 }
 
-// MARK: - Card
+// MARK: - Card (plain grouped surface, no border or shadow)
 struct AshteCardModifier: ViewModifier {
 	var cornerRadius: CGFloat = 22
 	var tint: Color = AshteTheme.violet
@@ -99,11 +67,6 @@ struct AshteCardModifier: ViewModifier {
 		content
 			.background(Color(UIColor.secondarySystemGroupedBackground))
 			.clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-			.overlay(
-				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-					.strokeBorder(tint.opacity(0.12), lineWidth: 1)
-			)
-			.shadow(color: tint.opacity(0.12), radius: 12, x: 0, y: 6)
 	}
 }
 
@@ -112,36 +75,52 @@ extension View {
 		modifier(AshteCardModifier(cornerRadius: cornerRadius, tint: tint))
 	}
 	
-	/// Colorful background behind lists / forms / scroll views.
+	/// Grouped background for lists / forms.
 	func ashteScreenBackground() -> some View {
 		self
 			.scrollContentBackground(.hidden)
-			.background(AshteBackground())
+			.background(Color(UIColor.systemGroupedBackground))
 	}
 }
 
-// MARK: - Gradient button style
+// MARK: - "Get" button: light-gray capsule with blue text
 struct AshteGradientButtonStyle: ButtonStyle {
 	var gradient: LinearGradient = AshteTheme.primary
 	var shadowColor: Color = AshteTheme.violet
-	var horizontalPadding: CGFloat = 22
-	var verticalPadding: CGFloat = 9
+	var horizontalPadding: CGFloat = 20
+	var verticalPadding: CGFloat = 7
 	
 	func makeBody(configuration: Configuration) -> some View {
 		configuration.label
-			.font(.system(size: 15, weight: .heavy, design: .rounded))
-			.foregroundColor(.white)
+			.font(.system(size: 17, weight: .semibold))
+			.foregroundColor(Color.accentColor)
 			.padding(.horizontal, horizontalPadding)
 			.padding(.vertical, verticalPadding)
-			.background(gradient)
+			.frame(minWidth: 70)
+			.background(Color(UIColor.systemGray6))
 			.clipShape(Capsule())
-			.shadow(color: shadowColor.opacity(0.35), radius: 8, x: 0, y: 4)
-			.scaleEffect(configuration.isPressed ? 0.94 : 1)
-			.animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
+			.opacity(configuration.isPressed ? 0.55 : 1)
 	}
 }
 
-// MARK: - Icon badge
+// MARK: - Filled blue capsule (main actions)
+struct AshteFilledButtonStyle: ButtonStyle {
+	var horizontalPadding: CGFloat = 22
+	var verticalPadding: CGFloat = 10
+	
+	func makeBody(configuration: Configuration) -> some View {
+		configuration.label
+			.font(.system(size: 17, weight: .semibold))
+			.foregroundColor(.white)
+			.padding(.horizontal, horizontalPadding)
+			.padding(.vertical, verticalPadding)
+			.background(Color.accentColor)
+			.clipShape(Capsule())
+			.opacity(configuration.isPressed ? 0.7 : 1)
+	}
+}
+
+// MARK: - Icon badge (flat squircle)
 struct AshteIconBadge: View {
 	let systemName: String
 	var gradient: LinearGradient = AshteTheme.primary
@@ -149,16 +128,15 @@ struct AshteIconBadge: View {
 	
 	var body: some View {
 		Image(systemName: systemName)
-			.font(.system(size: size * 0.46, weight: .bold))
+			.font(.system(size: size * 0.46, weight: .semibold))
 			.foregroundColor(.white)
 			.frame(width: size, height: size)
 			.background(gradient)
-			.clipShape(RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
-			.shadow(color: .black.opacity(0.12), radius: 3, x: 0, y: 2)
+			.clipShape(RoundedRectangle(cornerRadius: size * 0.25, style: .continuous))
 	}
 }
 
-// MARK: - Section title
+// MARK: - Section title ("Recently Updated   202")
 struct AshteSectionTitle: View {
 	let title: String
 	var count: Int? = nil
@@ -166,26 +144,56 @@ struct AshteSectionTitle: View {
 	
 	var body: some View {
 		HStack(spacing: 10) {
-			Capsule()
-				.fill(gradient)
-				.frame(width: 5, height: 22)
-			
 			Text(title)
-				.font(.system(.title2, design: .rounded).weight(.heavy))
+				.font(.system(size: 24, weight: .bold))
 				.foregroundColor(.primary)
 			
 			Spacer()
 			
 			if let count {
 				Text("\(count)")
-					.font(.system(size: 14, weight: .heavy, design: .rounded))
-					.foregroundColor(.white)
+					.font(.system(size: 15))
+					.foregroundColor(.secondary)
 					.padding(.horizontal, 12)
 					.padding(.vertical, 5)
-					.background(gradient)
+					.background(Color(UIColor.systemGray6))
 					.clipShape(Capsule())
 			}
 		}
+	}
+}
+
+// MARK: - Category chips (gray capsules, selected = blue)
+struct AshteChipBar: View {
+	let options: [String]
+	@Binding var selection: String
+	
+	var body: some View {
+		ScrollView(.horizontal, showsIndicators: false) {
+			HStack(spacing: 10) {
+				ForEach(options, id: \.self) { option in
+					Button {
+						UIImpactFeedbackGenerator(style: .light).impactOccurred()
+						withAnimation(.easeInOut(duration: 0.2)) {
+							selection = option
+						}
+					} label: {
+						Text(option)
+							.font(.system(size: 17, weight: .medium))
+							.foregroundColor(selection == option ? .white : .primary)
+							.padding(.horizontal, 18)
+							.padding(.vertical, 10)
+							.background(selection == option ? Color.accentColor : Color(UIColor.systemGray5))
+							.clipShape(Capsule())
+					}
+					.buttonStyle(.plain)
+				}
+			}
+			.padding(.horizontal, 16)
+			.padding(.vertical, 10)
+		}
+		.overlay(alignment: .top) { Divider() }
+		.overlay(alignment: .bottom) { Divider() }
 	}
 }
 
@@ -198,33 +206,27 @@ struct AshteEmptyState: View {
 	var action: (() -> Void)? = nil
 	
 	var body: some View {
-		VStack(spacing: 16) {
+		VStack(spacing: 14) {
 			Image(systemName: icon)
-				.font(.system(size: 54, weight: .bold))
-				.foregroundStyle(AshteTheme.candy)
-				.frame(width: 110, height: 110)
-				.background(
-					Circle().fill(AshteTheme.violet.opacity(0.12))
-				)
+				.font(.system(size: 50, weight: .regular))
+				.foregroundColor(.secondary)
+				.padding(.bottom, 4)
 			
 			Text(title)
-				.font(.system(.title2, design: .rounded).weight(.heavy))
+				.font(.system(size: 24, weight: .bold))
 				.multilineTextAlignment(.center)
 			
 			Text(message)
-				.font(.subheadline)
+				.font(.system(size: 16))
 				.foregroundColor(.secondary)
 				.multilineTextAlignment(.center)
 				.padding(.horizontal, 30)
 			
 			if let buttonTitle, let action {
 				Button(action: action) {
-					HStack(spacing: 8) {
-						Image(systemName: "plus.circle.fill")
-						Text(buttonTitle)
-					}
+					Text(buttonTitle)
 				}
-				.buttonStyle(AshteGradientButtonStyle(horizontalPadding: 26, verticalPadding: 13))
+				.buttonStyle(AshteFilledButtonStyle(horizontalPadding: 26, verticalPadding: 12))
 				.padding(.top, 6)
 			}
 		}

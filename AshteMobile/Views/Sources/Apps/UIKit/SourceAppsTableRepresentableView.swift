@@ -17,10 +17,17 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
     var onSelect: (SourceAppsView.SourceAppRoute) -> Void
     
     func makeUIView(context: Context) -> UITableView {
-        let tableView = UITableView(frame: .zero, style: .plain)
+        // .grouped: section headers scroll with the rows (no overlap with the list)
+        let tableView = UITableView(frame: .zero, style: .grouped)
         tableView.delegate = context.coordinator
         tableView.dataSource = context.coordinator
         tableView.backgroundColor = .clear
+        tableView.separatorStyle = .singleLine
+        tableView.separatorInset = UIEdgeInsets(top: 0, left: 88, bottom: 0, right: 16)
+        tableView.sectionFooterHeight = 0
+        if #available(iOS 15.0, *) {
+            tableView.sectionHeaderTopPadding = 6
+        }
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "AppCell")
         tableView.register(UITableViewHeaderFooterView.self, forHeaderFooterViewReuseIdentifier: "SectionHeader")
         
@@ -240,9 +247,13 @@ extension SourceAppsTableRepresentableView {
             case .date: entry = _groupedAppsByDate[_sortedSectionTitles[indexPath.section]]?[indexPath.row] ?? _sortedApps[indexPath.row]
             }
 
+            cell.backgroundColor = .clear
+            cell.selectionStyle = .none
             cell.contentConfiguration = UIHostingConfiguration {
                 SourceAppsCellView(source: entry.source, app: entry.app)
             }
+            .margins(.horizontal, 16)
+            .margins(.vertical, 10)
             return cell
         }
         
@@ -267,14 +278,19 @@ extension SourceAppsTableRepresentableView {
             case .name, .date: title = _sortedSectionTitles[section]
             }
             headerView?.contentConfiguration = UIHostingConfiguration {
-                HStack {
-                    Text(verbatim: title)
-                    Spacer()
-                }
-                .font(.headline)
-                .padding(.vertical, 2)
+                AshteSectionTitle(title: title)
             }
+            .margins(.horizontal, 16)
+            .margins(.vertical, 8)
             return headerView
+        }
+        
+        func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+            .leastNonzeroMagnitude
+        }
+        
+        func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+            nil
         }
         
         func sectionIndexTitles(for tableView: UITableView) -> [String]? {
