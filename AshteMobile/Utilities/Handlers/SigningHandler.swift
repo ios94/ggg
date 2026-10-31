@@ -52,6 +52,8 @@ final class SigningHandler: NSObject {
 			throw SigningFileHandlerError.appNotFound
 		}
 
+		LogsManager.shared.log("Signing started: \(_app.name ?? appUrl.lastPathComponent)")
+		
 		try _fileManager.createDirectoryIfNeeded(at: _uniqueWorkDir)
 		
 		let movedAppURL = _uniqueWorkDir.appendingPathComponent(appUrl.lastPathComponent)
@@ -130,8 +132,12 @@ final class SigningHandler: NSObject {
 		try await self.addToDatabase()
 		
 		if let error = handler.hadError {
+			LogsManager.shared.log("Signing failed: \(error.localizedDescription)", level: .error)
 			throw error
 		}
+		
+		let finishedName = _app.name ?? "app"
+		LogsManager.shared.log("Signing finished: \(finishedName)", level: .success)
 	}
 	
 	func move() async throws {

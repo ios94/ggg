@@ -151,6 +151,9 @@ struct SettingsView: View {
                     NavigationLink(destination: InstallationView()) {
                         settingRow(title: .localized("Installation"), icon: "arrow.down.circle.fill", gradient: AshteTheme.ocean)
                     }
+                    NavigationLink(destination: LogsListView()) {
+                        settingRow(title: .localized("Logs"), icon: "terminal.fill", gradient: AshteTheme.fresh)
+                    }
                 } footer: {
                     Text(.localized("Configure the apps way of installing, its zip compression levels, and custom modifications to apps."))
                 }

@@ -13,6 +13,8 @@ enum TabEnum: String, CaseIterable, Hashable {
     case apps        // 💡 ١. زیادکردنی تابی نوێ بۆ بەرنامەکان
     case sources
     case library
+    case files
+    case logs
     case settings
     case certificates
     
@@ -22,6 +24,8 @@ enum TabEnum: String, CaseIterable, Hashable {
         case .apps:         return .localized("Apps") // 💡 ناوی تابەکە
         case .sources:      return .localized("Sources")
         case .library:      return .localized("Library")
+        case .files:        return .localized("Files")
+        case .logs:         return .localized("Logs")
         case .settings:     return .localized("Settings")
         case .certificates: return .localized("Certificates")
         }
@@ -30,9 +34,11 @@ enum TabEnum: String, CaseIterable, Hashable {
     var icon: String {
         switch self {
         case .home:         return "house.fill"
-        case .apps:         return "square.stack.3d.up.fill"
+        case .apps:         return "app.badge.fill" // 💡 ئایکۆنی تابەکە
         case .sources:      return "globe.desk"
         case .library:      return "square.grid.2x2"
+        case .files:        return "folder.fill"
+        case .logs:         return "terminal.fill"
         case .settings:     return "gearshape.2"
         case .certificates: return "person.text.rectangle"
         }
@@ -45,6 +51,8 @@ enum TabEnum: String, CaseIterable, Hashable {
         case .apps:         AppsView() // 💡 ٢. بەستنەوەی بە فایلی بەرنامەکانەوە
         case .sources:      SourcesView()
         case .library:      LibraryView()
+        case .files:        FilesView()
+        case .logs:         LogsView()
         case .settings:     SettingsView()
         case .certificates: NBNavigationView(.localized("Certificates")) { CertificatesView() }
         }
@@ -54,12 +62,16 @@ enum TabEnum: String, CaseIterable, Hashable {
         return [
             .home,
             .apps,    // 💡 ٣. دانانی لە ڕیزی خوارەوە ڕێک لە تەنیشت Home
-            .sources
+            .sources,
+            .library,
+            .files,
+            .settings
         ]
     }
     
     static var customizableTabs: [TabEnum] {
         return [
+            .logs,
             .certificates
         ]
     }
